@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>圈圈叉叉叉叉圈圈</title>
+
+    <style>
+      body {
+        display: grid;
+        place-items: center;
+      }
+
+      #title {
+        margin-top: 40px;
+        font-size: 24px;
+        color: seagreen;
+        font-weight: 600;
+        font-style: italic;
+        text-decoration: underline;
+      }
+
+      p {
+        color: darkseagreen;
+      }
+
+      #box {
+        display: grid;
+        grid-template-columns: repeat(3, 150px);
+        /* gap: 0px; */
+        justify-content: center;
+        margin-top: 40px;
+      }
+
+      .smallbox {
+        width: 150px;
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        border: 2px solid #000;
+        cursor: pointer;
+      }
+
+      /* 直排 */
+      .leftbox {
+        border-right: 2px solid lightskyblue;
+        border-left: 2px solid transparent;
+      }
+
+      .centerbox {
+        border-right: 2px solid lightskyblue;
+        border-left: 2px solid lightskyblue;
+      }
+
+      .rightbox {
+        border-right: 2px solid transparent;
+        border-left: 2px solid lightskyblue;
+      }
+
+      /* 橫排 */
+      .topbox {
+        border-top: 2px solid transparent;
+        border-bottom: 2px solid lightskyblue;
+      }
+
+      .middlebox {
+        border-top: 2px solid lightskyblue;
+        border-bottom: 2px solid lightskyblue;
+      }
+
+      .bottombox {
+        border-top: 2px solid lightskyblue;
+        border-bottom: 2px solid transparent;
+      }
+
+      #status {
+        margin-top: 50px;
+        font-size: 18px;
+        text-align: center;
+        font-weight: bolder;
+        color: lightseagreen;
+      }
+
+      #reset {
+        margin-top: 30px;
+        padding: 5px 10px;
+        font-size: 16px;
+        cursor: pointer;
+        background: seagreen;
+        color: white;
+        border: 1px solid seagreen;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="title">圈圈叉叉井字遊戲</div>
+    <p>請點擊井字內</p>
+    <div id="box">
+      <div class="smallbox leftbox topbox" data-index="0"></div>
+      <div class="smallbox centerbox topbox" data-index="1"></div>
+      <div class="smallbox rightbox topbox" data-index="2"></div>
+      <div class="smallbox leftbox middlebox" data-index="3"></div>
+      <div class="smallbox centerbox middlebox" data-index="4"></div>
+      <div class="smallbox rightbox middlebox" data-index="5"></div>
+      <div class="smallbox leftbox bottombox" data-index="6"></div>
+      <div class="smallbox centerbox bottombox" data-index="7"></div>
+      <div class="smallbox rightbox bottombox" data-index="8"></div>
+    </div>
+    <!-- 顯示現在換誰 -->
+    <div id="status"></div>
+    <button id="reset">點我重新開始</button>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+      integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      // 先畫 X
+      let nowplayer = "X";
+      let gameActive = true;
+
+      // 讓格子是空的
+      const box = ["", "", "", "", "", "", "", "", ""];
+
+      // 勝利時格子連線的種類
+      const winningConditions = [
+        // 橫
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        // 直
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        // 斜
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
+
+      // 更新狀態顯示現在換誰
+      const updateStatus = (message) => {
+        $("#status").text(message);
+      };
+
+      // 初
+      updateStatus("第一個點擊的是「玩家 X」ㄛ");
+
+      // 檢查是否有人連線成功
+      const checkWinner = () => {
+        for (let condition of winningConditions) {
+          // 格子拆成 a b c 三格
+          const [a, b, c] = condition;
+          // a格 和 b格 和 c格 相同，是同個人佔領
+          if (box[a] && box[a] === box[b] && box[a] === box[c]) {
+            // true 是都相同所以有人贏了
+            return true;
+          }
+        }
+        // 不同人占領abc，沒有人贏，是 false
+        return false;
+      };
+
+      // 檢查是否平手，每格都填滿
+      const checkDraw = function () {
+        // 填滿是 true，會平手
+        return box.every(function (smallbox) {
+          return smallbox !== "";
+        });
+      };
+
+      // 點擊格子時
+      $(".smallbox").click(function () {
+        const smallboxIndex = $(this).data("index");
+
+        // 如果格子已經被佔領、或遊戲結束，就無法操作
+        if (box[smallboxIndex] !== "" || !gameActive) {
+          return;
+        }
+
+        // 更新遊戲狀態：現在輪到誰
+        box[smallboxIndex] = nowplayer;
+        $(this).text(nowplayer);
+
+        // 檢查勝利或平手
+        if (checkWinner()) {
+          updateStatus(`玩家 ${nowplayer} 贏了！`);
+          gameActive = false;
+          return;
+        } else if (checkDraw()) {
+          updateStatus("平手！");
+          gameActive = false;
+          return;
+        }
+
+        // 切換玩家是 O 或 X
+        nowplayer = nowplayer === "X" ? "O" : "X";
+        updateStatus(`輪到玩家 ${nowplayer} 出手`);
+      });
+
+      // 重置
+      $("#reset").click(function () {
+        box.fill("");
+        $(".smallbox").text("");
+        nowPlayer = "X";
+        gameActive = true;
+        updateStatus("第一個點擊的是「玩家 X」ㄛ");
+      });
+    </script>
+  </body>
+</html>
